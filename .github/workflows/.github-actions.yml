@@ -1,0 +1,95 @@
+name: Build and Test Flutter App
+on: [ push, pull_request ]
+
+jobs:
+  test:
+    runs-on: macos-latest
+    #sequence of tasks called
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: '12.x'
+      - uses: subosito/flutter-action@v1
+        with:
+          channel: 'stable' # or: 'beta', 'dev' or 'master'
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test
+
+  # Dartdoc documentation stage
+  # documentation:
+  #   runs-on: macos-latest
+  #   needs: test
+  #   #sequence of tasks called
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - uses: actions/setup-java@v1
+  #     with:
+  #       java-version: '12.x'
+  #   - uses: subosito/flutter-action@v1
+  #     with:
+  #       channel: 'stable' # or: 'beta', 'dev' or 'master'
+  #   - run: dartdoc
+
+  build_android_apk:
+    runs-on: macos-latest
+    needs: [test]
+    #sequence of tasks called
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: '12.x'
+      - uses: subosito/flutter-action@v1
+        with:
+          flutter-version: '3.0.1'
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build apk
+      - name: Upload APK
+        uses: actions/upload-artifact@main
+        with:
+          name: apk-build
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  build_android_aab:
+    runs-on: macos-latest
+    needs: [test]
+    #sequence of tasks called
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: '12.x'
+      - uses: subosito/flutter-action@v1
+        with:
+          flutter-version: '3.0.1'
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build appbundle
+      - name: Upload AAB
+        uses: actions/upload-artifact@main
+        with:
+          name: aab-build
+          path: build/app/outputs/bundle/release/app-release.aab
+
+  build_ios:
+    runs-on: macos-latest
+    needs: [test]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: '12.x'
+      - uses: subosito/flutter-action@v1
+        with:
+          flutter-version: '3.0.1'
+          channel: 'stable'
+      - run: flutter pub get
+      - run: flutter build ios --release --no-codesign
+      - name: Upload iPA
+        uses: actions/upload-artifact@main
+        with:
+          name: ios-build
+          path: build/ios/iphoneos
